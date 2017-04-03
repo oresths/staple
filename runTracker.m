@@ -1,10 +1,15 @@
-function runTracker(sequence, start_frame)
+% function runTracker(sequence, start_frame)
+function runTracker()
+start_frame = 1;
 % RUN_TRACKER  is the external function of the tracker - does initialization and calls trackerMain
 
     %% Read params.txt
     params = readParams('params.txt');
 	%% load video info
-	sequence_path = ['../Sequences/',sequence,'/'];
+% 	sequence_path = ['../Sequences/',sequence,'/'];
+%     sequence_path = ['./','vot15_ball1','/'];
+    sequence_path = ['../../Downloads/videos/rowing/','row_long2','/'];
+%     sequence_path = ['./','giro3','/'];
     img_path = [sequence_path 'imgs/'];
     %% Read files
     text_files = dir([sequence_path '*_frames.txt']);
@@ -64,6 +69,7 @@ function runTracker(sequence, start_frame)
     % in runTracker we do not output anything
 	params.fout = -1;
 	% start the actual tracking
-	trackerMain(params, im, bg_area, fg_area, area_resize_factor);
+	results = trackerMain(params, im, bg_area, fg_area, area_resize_factor);
     fclose('all');
+    disp(['fps = ' num2str(results.fps)])
 end

@@ -10,6 +10,8 @@ start_frame = 1;
 %     sequence_path = ['./','vot15_ball1','/'];
     sequence_path = ['../../Downloads/videos/rowing/','row_long2','/'];
 %     sequence_path = ['./','giro3','/'];
+    sequence_path = ['./','bike1','/'];
+    sequence_path = ['./','wakeboard2','/'];
     img_path = [sequence_path 'imgs/'];
     %% Read files
     text_files = dir([sequence_path '*_frames.txt']);

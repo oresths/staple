@@ -53,9 +53,10 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
         max_scale_factor = p.scale_step ^ floor(log(min([size(im,1) size(im,2)] ./ target_sz)) / log(p.scale_step));
     end
     
-    tl=3;
-    th=5;
+    tl=2.0;
+    th=3.0;
     PSR = th+1;
+    thres_hist = 0.9;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% %%
     t_imread = 0;
     %% MAIN LOOP
@@ -101,9 +102,14 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
                 % (TODO) in theory it should be at 0.5 (unseen colors shoud have max entropy)
                 likelihood_map(isnan(likelihood_map)) = 0;
 
+                % 
+                idx = likelihood_map > thres_hist * max(likelihood_map(:));
+                thres_lm = zeros(size(likelihood_map));
+                thres_lm(idx) = likelihood_map(idx);
+
                 % each pixel of response_pwp loosely represents the likelihood that
                 % the target (of size norm_target_sz) is centred on it
-                response_pwp = getCenterLikelihood(likelihood_map, p.norm_target_sz);
+                response_pwp = getCenterLikelihood(thres_lm, p.norm_target_sz);
 
                 %% ESTIMATION
                 response = mergeResponses(response_cf, response_pwp, p.merge_factor, p.merge_method);
@@ -140,15 +146,14 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
                     % same aspect ratio as the target bboxgetScaleSubwindow
                     area_resize_factor = sqrt(p.fixed_area/prod(bg_area));
                 end
-
-                if p.visualization_dbg==1
-                    mySubplot(2,1,5,1,im_patch_cf,'FG+BG','gray');
-                    mySubplot(2,1,5,2,likelihood_map,'obj.likelihood','parula');
-                    mySubplot(2,1,5,3,response_cf,'CF response','parula');
-                    mySubplot(2,1,5,4,response_pwp,'center likelihood','parula');
-                    mySubplot(2,1,5,5,response,'merged response','parula');
-                    drawnow
-                end
+            end
+            if p.visualization_dbg==1
+                mySubplot(2,1,5,1,im_patch_cf,'FG+BG','gray');
+                mySubplot(2,1,5,2,thres_lm,'obj.likelihood','parula');
+                mySubplot(2,1,5,3,response_cf,'CF response','parula');
+                mySubplot(2,1,5,4,response_pwp,'center likelihood','parula');
+                mySubplot(2,1,5,5,response,'merged response','parula');
+                drawnow
             end
         end
         
@@ -188,7 +193,7 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
                 xsf = fft(im_patch_scale,[],2);
                 new_sf_num = bsxfun(@times, ysf, conj(xsf));
                 new_sf_den = sum(xsf .* conj(xsf), 1);
-                if frame == 1,
+                if frame == 1
                     sf_den = new_sf_den;
                     sf_num = new_sf_num;
                 else
@@ -225,9 +230,11 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
             end
         end
         
+        % Re-detection
         if PSR <= tl
-            %redetection
-            debug=0;
+            OTB_rect_positions(frame,:) = [0,0,0,0];
+            
+            if p.fout > 0,  fprintf(p.fout,'Tracking Lost\n');   end
         end
     end
     elapsed_time = toc;

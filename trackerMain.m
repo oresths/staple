@@ -1,6 +1,10 @@
 function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
 %TRACKERMAIN contains the main loop of the tracker, P contains all the parameters set in runTracker
     %% INITIALIZATION
+    if strcmp(p.feature_type,'cnn')
+        net = alexnet;
+    end
+    
     num_frames = numel(p.img_files);
     % used for OTB-13 benchmark
     OTB_rect_positions = zeros(num_frames, 4);
@@ -74,7 +78,11 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
             % extract patch of size pwp_search_area and resize to norm_pwp_search_area
             im_patch_pwp = getSubwindow(im, pos, p.norm_pwp_search_area, pwp_search_area);
             % compute feature map
-            xt = getFeatureMap(im_patch_cf, p.feature_type, p.cf_response_size, p.hog_cell_size);
+            if strcmp(p.feature_type,'cnn')
+                xt = getFeatureMap(im_patch_cf, p.feature_type, p.cf_response_size, p.hog_cell_size, net);
+            else
+                xt = getFeatureMap(im_patch_cf, p.feature_type, p.cf_response_size, p.hog_cell_size);
+            end
             % apply Hann window
             xt_windowed = bsxfun(@times, hann_window, xt);
             % compute FFT
@@ -162,7 +170,11 @@ function [results] = trackerMain(p, im, bg_area, fg_area, area_resize_factor)
             % extract patch of size bg_area and resize to norm_bg_area
             im_patch_bg = getSubwindow(im, pos, p.norm_bg_area, bg_area);
             % compute feature map, of cf_response_size
-            xt = getFeatureMap(im_patch_bg, p.feature_type, p.cf_response_size, p.hog_cell_size);
+            if strcmp(p.feature_type,'cnn')
+                xt = getFeatureMap(im_patch_bg, p.feature_type, p.cf_response_size, p.hog_cell_size, net);
+            else
+                xt = getFeatureMap(im_patch_bg, p.feature_type, p.cf_response_size, p.hog_cell_size);
+            end
             % apply Hann window
             xt = bsxfun(@times, hann_window, xt);
             % compute FFT

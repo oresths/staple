@@ -1,4 +1,4 @@
-function out = getFeatureMap(im_patch, feature_type, cf_response_size, hog_cell_size)
+function out = getFeatureMap(im_patch, feature_type, cf_response_size, hog_cell_size, net)
 
 % code from DSST
 
@@ -18,6 +18,26 @@ switch feature_type
             im_patch = rgb2gray(im_patch);
         end
         out(:,:,1) = single(im_patch)/255 - 0.5;
+    case 'cnn'
+        for i=1:3
+            temp(:,:,i) = imresize(im_patch(:,:,i), [227 227], 'bilinear');
+        end
+        feat = activations(net,temp,8); %8-27x27x256, 16-6x6x256
+        temp=reshape(feat,27,27,256);
+        temp2 = zeros(27*27,256);
+        for i=1:27
+            for j=1:27
+                temp2((i-1)*27+j,:) = squeeze(temp(i,j,1:256));
+            end
+        end
+        [~,xx]=pcares(temp2,28);
+        out = zeros(27,27,256);
+        for i=1:27
+            for j=1:27
+                out(i,j,:) = xx((i-1)*27 +j, :);
+            end
+        end
+        out = out(:,:,1:28);
     case 'gray'
         if hog_cell_size > 1, im_patch = mexResize(im_patch,cf_response_size,'auto');   end
         if size(im_patch, 3) == 1

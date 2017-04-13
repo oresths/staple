@@ -17,10 +17,15 @@ function [params, bg_area, fg_area, area_resize_factor] = initializeAllAreas(im,
 	% same aspect ratio as the target bbox
 	area_resize_factor = sqrt(params.fixed_area/prod(bg_area));
 	params.norm_bg_area = round(bg_area * area_resize_factor);
-	% Correlation Filter (HOG) feature space
-	% It smaller that the norm bg area if HOG cell size is > 1
+	
+    % Correlation Filter (HOG) feature space
+	% It smaller that the norm bg area if HOG cell size is > 1    
 	params.cf_response_size = floor(params.norm_bg_area / params.hog_cell_size);
-	% given the norm BG area, which is the corresponding target w and h?
+    if strcmp(params.feature_type,'cnn')
+        params.cf_response_size = [27,27];
+    end
+    
+   	% given the norm BG area, which is the corresponding target w and h?
  	norm_target_sz_w = 0.75*params.norm_bg_area(2) - 0.25*params.norm_bg_area(1);
  	norm_target_sz_h = 0.75*params.norm_bg_area(1) - 0.25*params.norm_bg_area(2);
 %    norm_target_sz_w = params.target_sz(2) * params.norm_bg_area(2) / bg_area(2);
